@@ -1,5 +1,6 @@
 <template>
   <section class="todoapp">
+    <!-- 标题 输入框 -->
     <header class="header">
       <section class="todo-count">
         <span class="todo-completed-count">
@@ -24,6 +25,8 @@
         @keydown.enter="onKeyDownAddTodo()"
       />
     </header>
+
+    <!-- todo列表 -->
     <section class="main">
       <ul class="todo-list">
         <li class="todo" v-for="(item, index) in todoListFiltered" :key="index">
@@ -38,12 +41,14 @@
               {{ item.title }}
               <span>{{ item.content }}</span>
               <div class="edit" @click="onClickRemoveTodo(index)">删除</div>
-              <div class="edit" @click="onClickEditShow()">编辑</div>
+              <div class="edit" @click="onClickEditShow(index)">编辑</div>
             </label>
           </div>
         </li>
       </ul>
     </section>
+
+    <!-- 底部筛选框 -->
     <footer class="footer">
       <ul class="filters">
         <li>
@@ -60,13 +65,16 @@
         Clear completed
       </button>
     </footer>
+
+    <!-- 编辑框 -->
     <section class="edit-popout" v-show="isEditShow">
       <h2>编辑todo</h2>
-      <input type="text" v-model="thisTodoTitle" />
+      <span>标题:</span>
+      <input type="text" v-model="thisTodoTitle" class="edit-input" autofocus />
       <br />
-      <input type="text" v-model="thisTodoContent" />
-      <br />
-      <select>
+      <span>内容:</span>
+      <input type="text" v-model="thisTodoContent" class="edit-input" />
+      <select v-model="thisCompleted">
         <option value="true">已完成</option>
         <option value="false">未完成</option>
       </select>
@@ -83,11 +91,13 @@ export default {
       todoList: [],
       newTitle: "",
       newTodoContent: "",
-      activeNumber: 0,
       isEditShow: false,
       thisTodoTitle: "",
       thisTodoContent: "",
+      thisCompleted: null,
+      thisIndex: 0,
       showModel: "All",
+      activeNumber: 0,
     };
   },
 
@@ -108,7 +118,6 @@ export default {
           isCompleted: false,
         };
         this.todoList.push(newTodo);
-        this.activeNumber++;
         this.newTitle = "";
         this.newTodoContent = "";
         document.querySelector(".new-todo-title").focus();
@@ -122,34 +131,36 @@ export default {
       if (this.showModel != "All") {
         event.preventDefault();
       }
-      if (this.todoList[index].isCompleted === false) {
-        this.activeNumber--;
-      } else {
-        this.activeNumber++;
-      }
     },
 
     // 删除todo
     onClickRemoveTodo(index) {
       if (this.showModel === "All") {
-        if (this.todoList[index].isCompleted === false) {
-          this.activeNumber--;
-        }
         this.todoList.splice(index, 1);
       }
     },
 
-    onClickEditShow() {
+    // 显示编辑框
+    onClickEditShow(index) {
       if (this.showModel === "All") {
+        this.thisIndex = index;
+        const item = this.todoList[index];
+        this.thisTodoTitle = item.title;
+        this.thisTodoContent = item.content;
+        this.thisCompleted = item.isCompleted;
         this.isEditShow = true;
       }
     },
 
     // 确认编辑
     onClickUpdateTodo() {
+      this.todoList[this.thisIndex].title = this.thisTodoTitle;
+      this.todoList[this.thisIndex].content = this.thisTodoContent;
+      this.todoList[this.thisIndex].isCompleted = this.thisCompleted;
       this.isEditShow = false;
       this.thisTodoTitle = "";
       this.thisTodoContent = "";
+      this.thisCompleted = null;
     },
 
     // 批量删除已完成
@@ -176,6 +187,7 @@ export default {
   },
 
   computed: {
+    // 筛选
     todoListFiltered() {
       if (this.showModel === "Uncompleted") {
         return this.todoList.filter((item) => {
@@ -187,6 +199,23 @@ export default {
         });
       }
       return this.todoList;
+    },
+
+    // activeNumber() {
+    //   return this.todoList.filter((item) => {
+    //       return item.isCompleted === false;
+    //     }).length;
+    // }
+  },
+
+  watch: {
+    todoList: {
+      handler() {
+        this.activeNumber = this.todoList.filter((item) => {
+          return item.isCompleted === false;
+        }).length;
+      },
+      deep: true,
     },
   },
 };
