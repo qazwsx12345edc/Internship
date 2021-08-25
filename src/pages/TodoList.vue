@@ -1,33 +1,21 @@
 <template>
-  <section class="todoapp">
+  <div class="todoapp">
     <!-- 标题 输入框 -->
     <header class="header">
-      <section class="todo-count">
+      <div class="todo-count" @click="onClickAddShow()">
         <span class="todo-completed-count">
-          completed: {{ todoList.length - activeNumber }}
+          completed: {{ completedNumber }}
         </span>
+        <span class="add" style="font-weight:500; font-size:24px">+</span>
         <span class="todo-uncompleted-count">
-          uncompleted: {{ activeNumber }}
+          uncompleted: {{ uncompletedNumber }}
         </span>
-      </section>
+      </div>
       <h1>TodoList</h1>
-      <input
-        class="new-todo-title"
-        autofocus
-        placeholder="Title"
-        v-model="newTitle"
-        @keydown.enter="onKeyDownInputContent()"
-      />
-      <input
-        class="new-todo-detail"
-        placeholder="What needs to be done?"
-        v-model="newTodoContent"
-        @keydown.enter="onKeyDownAddTodo()"
-      />
     </header>
 
     <!-- todo列表 -->
-    <section class="main">
+    <div class="main">
       <ul class="todo-list">
         <li class="todo" v-for="(item, index) in todoListFiltered" :key="index">
           <div class="view">
@@ -35,7 +23,7 @@
               class="toggle"
               type="checkbox"
               v-model="item.isCompleted"
-              @click="onClickUpdateActiveNumber(index)"
+              @click="onClickUpdateUncompletedNumber()"
             />
             <label class="todo_value">
               {{ item.title }}
@@ -46,19 +34,19 @@
           </div>
         </li>
       </ul>
-    </section>
+    </div>
 
     <!-- 底部筛选框 -->
     <footer class="footer">
       <ul class="filters">
         <li>
-          <a href="#/all" @click="showAll()">All</a>
+          <a @click="showAll()">All</a>
         </li>
         <li>
-          <a href="#/uncompleted" @click="showUncompleted()">Uncompleted</a>
+          <a @click="showUncompleted()">Uncompleted</a>
         </li>
         <li>
-          <a href="#/completed" @click="showCompleted()">Completed</a>
+          <a @click="showCompleted()">Completed</a>
         </li>
       </ul>
       <button class="clear-completed" @click="onClickRemoveAllCompleted()">
@@ -66,69 +54,60 @@
       </button>
     </footer>
 
-    <!-- 编辑框 -->
-    <section class="edit-popout" v-show="isEditShow">
-      <h2>编辑todo</h2>
-      <span>标题:</span>
-      <input type="text" v-model="thisTodoTitle" class="edit-input" autofocus />
-      <br />
-      <span>内容:</span>
-      <input type="text" v-model="thisTodoContent" class="edit-input" />
-      <select v-model="thisCompleted">
-        <option value="true">已完成</option>
-        <option value="false">未完成</option>
-      </select>
-      <br />
-      <button @click="onClickUpdateTodo()">确认</button>
-    </section>
-  </section>
+    <!-- 弹出框 -->
+    <InputBox
+      :class="inputBoxClass"
+      :thisTodoTitle="thisTodoTitle"
+      :thisTodoContent="thisTodoContent"
+      :thisCompleted="thisCompleted"
+      @changeTodoTitle="changeTodoTitle"
+      @changeTodoContent="changeTodoContent"
+      @changeTodoCompleted="changeTodoCompleted"
+      @submit="inputSubmit"
+    />
+  </div>
 </template>
 
 <script>
+import InputBox from "../components/InputBox.vue";
 export default {
+  components: {
+    InputBox,
+  },
   data() {
     return {
       todoList: [],
-      newTitle: "",
-      newTodoContent: "",
       isEditShow: false,
       thisTodoTitle: "",
       thisTodoContent: "",
       thisCompleted: null,
       thisIndex: 0,
       showModel: "All",
-      activeNumber: 0,
+      uncompletedNumber: 0,
     };
   },
 
   methods: {
-    // 将光标移到下一个输入框
-    onKeyDownInputContent() {
-      if (this.newTitle != "") {
-        document.querySelector(".new-todo-detail").focus();
-      }
-    },
-
     //添加todo
-    onKeyDownAddTodo() {
-      if (this.newTitle != "" && this.newTodoContent != "") {
+    addTodo() {
+      if (this.thisTodoTitle !== "" && this.thisTodoContent != "") {
         const newTodo = {
-          title: this.newTitle,
-          content: this.newTodoContent,
+          title: this.thisTodoTitle,
+          content: this.thisTodoContent,
           isCompleted: false,
         };
-        this.todoList.push(newTodo);
-        this.newTitle = "";
-        this.newTodoContent = "";
-        document.querySelector(".new-todo-title").focus();
+        this.todoList.unshift(newTodo);
+        this.thisTodoTitle = "";
+        this.thisTodoContent = "";
+        this.isEditShow = false
       }
     },
 
     // 复选框 更新完成数量
-    onClickUpdateActiveNumber(index, event) {
+    onClickUpdateUncompletedNumber(event) {
       // 筛选状态下不可编辑
       event = event || window.event;
-      if (this.showModel != "All") {
+      if (this.showModel !== "All") {
         event.preventDefault();
       }
     },
@@ -138,6 +117,10 @@ export default {
       if (this.showModel === "All") {
         this.todoList.splice(index, 1);
       }
+    },
+
+    onClickAddShow() {
+      this.isEditShow = true
     },
 
     // 显示编辑框
@@ -153,7 +136,7 @@ export default {
     },
 
     // 确认编辑
-    onClickUpdateTodo() {
+    updateTodo() {
       this.todoList[this.thisIndex].title = this.thisTodoTitle;
       this.todoList[this.thisIndex].content = this.thisTodoContent;
       this.todoList[this.thisIndex].isCompleted = this.thisCompleted;
@@ -184,6 +167,28 @@ export default {
     showAll() {
       this.showModel = "All";
     },
+
+    changeTodoTitle(value) {
+      this.thisTodoTitle = value
+    },
+
+    changeTodoContent(value) {
+      this.thisTodoContent = value
+    },
+    
+    changeTodoCompleted(value) {
+      this.thisCompleted = value
+    },
+
+    inputSubmit(){
+      if (this.thisCompleted === null) {
+        this.addTodo()
+      }
+      else{
+        this.updateTodo()
+      }
+    }
+    
   },
 
   computed: {
@@ -201,17 +206,22 @@ export default {
       return this.todoList;
     },
 
-    // activeNumber() {
-    //   return this.todoList.filter((item) => {
-    //       return item.isCompleted === false;
-    //     }).length;
-    // }
+    completedNumber() {
+      return this.todoList.length - this.uncompletedNumber;
+    },
+
+    inputBoxClass() {
+      if (this.isEditShow) {
+        return "edit-popout-show"
+      }
+      return ""
+    }
   },
 
   watch: {
     todoList: {
       handler() {
-        this.activeNumber = this.todoList.filter((item) => {
+        this.uncompletedNumber = this.todoList.filter((item) => {
           return item.isCompleted === false;
         }).length;
       },
