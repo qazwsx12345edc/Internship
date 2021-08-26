@@ -6,7 +6,7 @@
         <span class="todo-completed-count">
           completed: {{ completedNumber }}
         </span>
-        <span class="add" style="font-weight:500; font-size:24px">+</span>
+        <span class="add" style="font-weight: 500; font-size: 24px">+</span>
         <span class="todo-uncompleted-count">
           uncompleted: {{ uncompletedNumber }}
         </span>
@@ -22,8 +22,8 @@
             <input
               class="toggle"
               type="checkbox"
-              v-model="item.isCompleted"
-              @click="onClickUpdateUncompletedNumber()"
+              :checked="item.isCompleted"
+              @click="onClickUpdateUncompletedNumber(index)"
             />
             <label class="todo_value">
               {{ item.title }}
@@ -65,25 +65,26 @@
       @changeTodoCompleted="changeTodoCompleted"
       @submit="inputSubmit"
     />
+    <!-- {{ $store.state.todos.todoList }} -->
   </div>
 </template>
 
 <script>
 import InputBox from "../components/InputBox.vue";
+import { mapGetters, mapMutations } from "vuex";
+
 export default {
   components: {
     InputBox,
   },
   data() {
     return {
-      todoList: [],
       isEditShow: false,
       thisTodoTitle: "",
       thisTodoContent: "",
       thisCompleted: null,
       thisIndex: 0,
       showModel: "All",
-      uncompletedNumber: 0,
     };
   },
 
@@ -96,31 +97,33 @@ export default {
           content: this.thisTodoContent,
           isCompleted: false,
         };
-        this.todoList.unshift(newTodo);
+        this.new_todo(newTodo);
         this.thisTodoTitle = "";
         this.thisTodoContent = "";
-        this.isEditShow = false
+        this.isEditShow = false;
       }
     },
 
     // 复选框 更新完成数量
-    onClickUpdateUncompletedNumber(event) {
+    onClickUpdateUncompletedNumber(index, event) {
       // 筛选状态下不可编辑
       event = event || window.event;
       if (this.showModel !== "All") {
         event.preventDefault();
       }
+      const completed = !this.todoList[index].isCompleted;
+      this.update_todo_completed({ index: index, value: completed });
     },
 
     // 删除todo
     onClickRemoveTodo(index) {
       if (this.showModel === "All") {
-        this.todoList.splice(index, 1);
+        this.remove_todo(index);
       }
     },
 
     onClickAddShow() {
-      this.isEditShow = true
+      this.isEditShow = true;
     },
 
     // 显示编辑框
@@ -137,9 +140,18 @@ export default {
 
     // 确认编辑
     updateTodo() {
-      this.todoList[this.thisIndex].title = this.thisTodoTitle;
-      this.todoList[this.thisIndex].content = this.thisTodoContent;
-      this.todoList[this.thisIndex].isCompleted = this.thisCompleted;
+      this.update_todo_title({
+        index: this.thisIndex,
+        newTitle: this.thisTodoTitle,
+      });
+      this.update_todo_content({
+        index: this.thisIndex,
+        newContent: this.thisTodoContent,
+      });
+      this.update_todo_completed({
+        index: this.thisIndex,
+        value: this.thisCompleted,
+      });
       this.isEditShow = false;
       this.thisTodoTitle = "";
       this.thisTodoContent = "";
@@ -150,7 +162,7 @@ export default {
     onClickRemoveAllCompleted() {
       for (let index = 0; index < this.todoList.length; index++) {
         if (this.todoList[index].isCompleted === true) {
-          this.todoList.splice(index, 1);
+          this.remove_todo(index);
           index--;
         }
       }
@@ -169,26 +181,32 @@ export default {
     },
 
     changeTodoTitle(value) {
-      this.thisTodoTitle = value
+      this.thisTodoTitle = value;
     },
 
     changeTodoContent(value) {
-      this.thisTodoContent = value
-    },
-    
-    changeTodoCompleted(value) {
-      this.thisCompleted = value
+      this.thisTodoContent = value;
     },
 
-    inputSubmit(){
+    changeTodoCompleted(value) {
+      this.thisCompleted = value;
+    },
+
+    inputSubmit() {
       if (this.thisCompleted === null) {
-        this.addTodo()
+        this.addTodo();
+      } else {
+        this.updateTodo();
       }
-      else{
-        this.updateTodo()
-      }
-    }
-    
+    },
+
+    ...mapMutations([
+      "new_todo",
+      "remove_todo",
+      "update_todo_title",
+      "update_todo_content",
+      "update_todo_completed",
+    ]),
   },
 
   computed: {
@@ -206,28 +224,16 @@ export default {
       return this.todoList;
     },
 
-    completedNumber() {
-      return this.todoList.length - this.uncompletedNumber;
-    },
-
     inputBoxClass() {
       if (this.isEditShow) {
-        return "edit-popout-show"
+        return "edit-popout-show";
       }
-      return ""
-    }
+      return "";
+    },
+
+    ...mapGetters(["todoList", "completedNumber", "uncompletedNumber"]),
   },
 
-  watch: {
-    todoList: {
-      handler() {
-        this.uncompletedNumber = this.todoList.filter((item) => {
-          return item.isCompleted === false;
-        }).length;
-      },
-      deep: true,
-    },
-  },
 };
 </script>
 

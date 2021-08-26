@@ -6,6 +6,10 @@ Vue.use(VueRouter)
 
 const routes = [
   {
+    path: '/',
+    redirect: '/todo-list'
+  },
+  {
     path: '/todo-list',
     component: TodoList
   },
