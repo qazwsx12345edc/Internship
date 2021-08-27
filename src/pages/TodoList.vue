@@ -71,7 +71,7 @@
 
 <script>
 import InputBox from "../components/InputBox.vue";
-import { mapGetters, mapMutations } from "vuex";
+import { mapActions, mapGetters, mapMutations } from "vuex";
 
 export default {
   components: {
@@ -112,7 +112,7 @@ export default {
         event.preventDefault();
       }
       const completed = !this.todoList[index].isCompleted;
-      this.update_todo_completed({ index: index, value: completed });
+      this.update_todo_completed({ index: index, newCompleted: completed });
     },
 
     // 删除todo
@@ -140,18 +140,13 @@ export default {
 
     // 确认编辑
     updateTodo() {
-      this.update_todo_title({
+      let payload = {
         index: this.thisIndex,
         newTitle: this.thisTodoTitle,
-      });
-      this.update_todo_content({
-        index: this.thisIndex,
         newContent: this.thisTodoContent,
-      });
-      this.update_todo_completed({
-        index: this.thisIndex,
-        value: this.thisCompleted,
-      });
+        newCompleted: this.thisCompleted,
+      };
+      this.update_todo(payload);
       this.isEditShow = false;
       this.thisTodoTitle = "";
       this.thisTodoContent = "";
@@ -201,11 +196,15 @@ export default {
     },
 
     ...mapMutations([
-      "new_todo",
       "remove_todo",
       "update_todo_title",
       "update_todo_content",
       "update_todo_completed",
+    ]),
+
+    ...mapActions([
+      "new_todo", 
+      "update_todo"
     ]),
   },
 
@@ -218,7 +217,7 @@ export default {
         });
       } else if (this.showModel === "Completed") {
         return this.todoList.filter((item) => {
-          return item.isCompleted === true;
+          return item.isCompleted !== false;
         });
       }
       return this.todoList;
@@ -233,7 +232,6 @@ export default {
 
     ...mapGetters(["todoList", "completedNumber", "uncompletedNumber"]),
   },
-
 };
 </script>
 
